@@ -1,107 +1,140 @@
-<script>const log = console.log;</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>02/1</title>
+    <script src="./fx.js"></script>
+</head>
+<body>
 
-## 기존과 달라진 ES6에서의 리스트 순회
-- for i++
-- for of
+## 명령형 습관 지우기 - 만능 reduce? No!
 
-<script>
-  // ES6 이전의 순회 방법들
-  const list = [1, 2, 3];
-  for (var i = 0; i < list.length; i++) {
-    // log(list[i]);
-  }
-  const str = 'abc';
-  for (var i = 0; i < str.length; i++) {
-    // log(str[i]);
-  }
-
-  // ES6의 순회 방법들
-  // 루프를 도는 코드가 추상화되어 있어 간결해졌다.
-  // 코드가 간결해지는 것에 더해서 for of 문으로는 Map, Set의 자료구조도 순회할 수 있다(for 문으로는 불가)
-  for (const a of list) {
-    // log(a);
-  }
-  for (const a of str) {
-    // log(a);
-  }
-</script>
-
-### Array를 통해 알아보기
+1. (reduce + 복잡한 함수 + acc) 보다 (map + 간단한 함수 + reduce)
 
 <script>
-  log('Arr -----------');
-  const arr = [1, 2, 3];
-  let iter1 = arr[Symbol.iterator]();
-  for (const a of iter1) log(a);
-</script>
+  const users = [
+    { name: 'AA', age: 35 },
+    { name: 'BB', age: 26 },
+    { name: 'CC', age: 28 },
+    { name: 'CC', age: 34 },
+    { name: 'EE', age: 23 }
+  ];
 
-### Set을 통해 알아보기
+  // reduce의 보조함수로 복잡한 합수를 넣는 것보다,
+  // reduce로 전달되는 이터러블 객체를 원하는 형태로 정제하는 것이 낫다
+  console.log(_.reduce((total, u) => total + u.age, 0, users));
 
-<script>
-  log('Set -----------');
-  const set = new Set([1, 2, 3]);
-  for (const a of set) log(a);
-</script>
 
-### Map을 통해 알아보기
+  // map으로 reduce에 전달되는 이터러블 정제
+  // reduce에 전달한 콜백도 더 재사용가능한 일반적인 함수를 활용할 수 있다.
+  const add = (a, b) => a + b;
+  console.log(_.reduce(add, L.map(u => u.age, users)));
 
-<script>
-  log('Map -----------');
-  const map = new Map([['a', 1], ['b', 2], ['c', 3]]);
-  for (const a of map.keys()) log(a);
-  for (const a of map.values()) log(a);
-  for (const a of map.entries()) log(a);
+  // 추가적으로 ages 함수를 만들어서 조합할 수 있다.
+  const ages = L.map(u => u.age);
+  console.log(_.reduce(add, ages(users)));
+
   console.clear();
 </script>
 
-## 이터러블/이터레이터 프로토콜
-- 이터러블: 이터레이터를 리턴하는 [Symbol.iterator]() 를 가진 값
-- 이터레이터: { value, done } 객체를 리턴하는 next() 를 가진 값
-- 이터러블/이터레이터 프로토콜: 이터러블을 for...of, 전개 연산자 등과 함께 동작하도록한 규약
-
-### 사용자 정의 이터러블을 통해 알아보기
+2. (reduce 하나) 보다 (map + filter + reduce)
 
 <script>
-  const iterable = {
-    [Symbol.iterator]() {
-      let i = 3;
-      return {
-        next() {
-          return i == 0 ? {done: true} : {value: i--, done: false};
-        },
-        [Symbol.iterator]() {
-          return this;
-        }
-      }
-    }
+  // reduce의 보조함수를 복잡하게 만드는 것보다,
+  // map, filter, reduce를 모두 사용하는 식으로 사용하면 코드가 간결해진다.
+  console.log(
+      _.reduce((total, u) => u.age >= 30 ? total : total + u.age,
+          0,
+          users));
+
+  console.log(
+      _.reduce(add,
+          L.map(u => u.age,
+              L.filter(u => u.age < 30, users))));
+
+  // map과 filter의 순서를 바꿀 수도 있다.
+  console.log(
+      _.reduce(add,
+          L.filter(n => n < 30,
+              L.map(u => u.age, users))));
+
+  console.clear();
+</script>
+
+3. query
+
+<script>
+  const obj1 = {
+    a: 1,
+    b: undefined,
+    c: 'CC',
+    d: 'DD'
   };
-  let iterator = iterable[Symbol.iterator]();
-  iterator.next();
-  iterator.next();
-  // log(iterator.next());
-  // log(iterator.next());
-  // log(iterator.next());
-  for (const a of iterator) log(a);
+  // a=1&c=CC&d=DD
 
-  // const arr2 = [1, 2, 3];
-  // let iter2 = arr2[Symbol.iterator]();
-  // iter2.next();
-  // log(iter2[Symbol.iterator]() == iter2);
-  // for (const a of iter2) log(a);
+  function query1(obj) {
+    let res = '';
+    for (const k in obj) {
+      const v = obj[k];
+      if (v === undefined) continue;
+      if (res != '') res += '&';
+      res += k + '=' + v;
+    }
+    return res;
+  }
+  console.log(query1(obj1));
 
-  for (const a of document.querySelectorAll('*')) log(a);
-  const all = document.querySelectorAll('*');
-  let iter3 = all[Symbol.iterator]();
-  log(iter3.next());
-  log(iter3.next());
-  log(iter3.next());
+  function query2(obj) {
+    return Object
+        .entries(obj)
+        .reduce((query, [k, v], i) => {
+          if (v === undefined) return query;
+          return `${query}${i > 0 ? '&' : ''}${k}=${v}`;
+        }, '');
+  }
+  console.log(query2(obj1));
+
+  const join = _.curry((sep, iter) =>
+      _.reduce((a, b) => `${a}${sep}${b}`, iter));
+
+  const query3 = obj =>
+      join('&',
+          _.map(([k, v]) => `${k}=${v}`,
+              _.reject(([_, v]) => v === undefined,
+                  Object.entries(obj))));
+
+  console.log(query3(obj1));
+
+  /*const query4 = _.pipe(
+    Object.entries,
+    L.reject(([_, v]) => v === undefined),
+    L.map(([k, v]) => `${k}=${v}`),
+    _.reduce((a, b) => `${a}&${b}`));*/
+
+  const query5 = _.pipe(
+      Object.entries,
+      L.reject(([_, v]) => v === undefined),
+      L.map(join('=')),
+      join('&'));
+
+  console.log(query5(obj1));
+  console.clear();
 </script>
 
-## 전개 연산자
+4. queryToObject
 
 <script>
-  console.clear();
-  const a = [1, 2];
-  // a[Symbol.iterator] = null;
-  log([...a, ...arr, ...set, ...map.keys()]);
+  const split = _.curry((sep, str) => str.split(sep));
+
+  const queryToObject = _.pipe(
+      split('&'),
+      L.map(split('=')),
+      L.map(([k, v]) => ({ [k]: v })),
+      _.reduce(Object.assign));
+
+  console.log(queryToObject('a=1&c=CC&d=DD'));
 </script>
+
+
+</body>
+</html>
