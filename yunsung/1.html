@@ -1,71 +1,113 @@
-<script>const log = console.log</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>01/1</title>
+  <script src="./fx.js"></script>
+</head>
+<body>
 
-# 평가
-  - 코드가 계산(평가? Evaluation) 되어 값을 만드는 것
+# 함수형 프로그래밍과 JavaScript ES6+ 응용편
 
-# 일급
-  - 값으로 다룰 수 있다.
-  - 변수로 담을 수 있다.
-  - 변수의 인자로 사용될 수 있다.
-  - 함수의 결과(반환값)로 사용될 수 있다.
+## 이터러블 프로그래밍 혹은 리스트 프로세싱 (Lisp)
 
+1. 홀수 n개 더하기
 <script>
-    const num1 = 1 + 2; // 3
-    const num2 = (1 + 2) + 4; // 7
-    const array1 = [1, 5]; // [1, 5];
-    const array2 = [1, 2 + 3]; // [1, 5]
-    const array3 = [1, 2, ...[3, 4]]; // [1, 2, 3, 4];
-
-    const a = 10;
-    const add10 = a => a + 10;
-    const r = add10(a);
-    log(r);
-</script>
-
-
-# 일급 함수
-  - 함수를 값으로 다룰 수 있다.
-  - 조합성과 추상화의 도구
-
-<script>
-    const add5 = a => a + 5;
-    log(add5);                  // 함수를 다른 함수의 인자로 넘겨줄 수 있다.
-    log(add5(5));               // 함수를 호출한 값을 함수로 넘겨줄 수 있다.(= 값으로 평가된 함수호출을 다른 함수의 인자로 넘겨줄 수 있다.)
-
-    const f1 = () => () => 1;   // 함수는 함수를 반환할 수 있다.
-    log(f1());                  // () => 1
-
-    const f2 = f1();            // 함수는 변수에 할당할 수 있다.
-    log(f2);
-    log(f2());
-</script>
-
-# 고차함수
-  - 함수를 값으로 다루는 함수
-    1. 함수를 인자로 받아서 실행하는 함수
-    2. 함수를 만들어서 리턴하는 함수(클로저를 만들어 리턴하는 함수)
-
-1. 함수를 인자로 받아서 실행하는 함수
-<script>
-    const apply1 = f => f(1);
-    const add2 = a => a + 2;
-    log(apply1(add2));        // 3
-    log(apply1(a => a - 1));  // 0
-
-    const times = (f, n) => {
-      let i = -1;
-      while (++i < n) f(i);
+  // 명령형 스타일의 코드. 효율적으로 동작하는 코드다.
+  // 명령형 프로그래밍에서의 if문, 변수에 값 할당, 하나의 값으로 축약(이 코드에서는 값 합산), 효율적으로 동작하도록 하는 break 등을 볼 수 있다.
+  // 간단한 코드처럼 보이지만 프로그래밍에서 볼 수 있는 다양한 흐름제어를 볼 수 있다. 명령형 프로그래밍에서의 추상화라고 볼 수 있다.
+  function f1(limit, list) {
+    let acc = 0;
+    for (const a of list) {
+      if (a % 2) {
+        const b = a * a;
+        acc += b;
+        if (--limit == 0) break;
+      }
     }
-
-    times(log, 3); // 0, 1, 2
-    times(a => log(a + 10), 3); // 10, 11, 12
+    console.log(acc);
+  }
+  f1(3, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 </script>
 
-2. 함수를 만들어서 리턴하는 함수(클로저를 만들어 리턴하는 함수)
 <script>
-  const addMaker = a => b => a + b;
-  const add10 = addMaker(10);
-  log(add10(5));      // 15
-  log(add10(10));     // 20
-  // a + b 값을 반환하는 함수(b => a + b)에서 a 값을 기억하고 있는 것이 클로저이다.
+  // 함수형으로 추상화되어 있는 것은 이터러블 프로그래밍이다.
+  const add = (a, b) => a + b;
+
+  function f2(limit, list) {
+    _.go(list,
+            L.filter(a => a % 2), // - if를 filter로
+            L.map(a => a * a),    // - 값 변화 후 변수 할당을 map으로
+            L.take(limit),        // - break를 take로
+            _.reduce(add),        // - 축약 및 합산을 reduce로
+            console.log);
+  }
+  f2(3, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  console.clear();
 </script>
+
+
+<script>
+  // (함수형 추상화 계속)
+
+  // 명령형 프로그래밍 스타일
+  // 홀수만 출력하기 위해서 i 값을 2씩 더해준다. if 문을 사용할 필요가 없어지고 루프의 횟수도 줄어들었다.
+  function f3(end) {
+    let i = 1;
+    while (i < end) {
+      console.log(i);
+      i += 2;
+    }
+  }
+  f3(10);
+
+  // 이터러블 프로그래밍 스타일
+  // range 함수에 step 값을 줘서 위의 명령형 코드와 같은 효과를 주었다.
+  function f4(end) {
+    _.go(
+         L.range(1, end, 2),    // - while을 range로
+         _.each(console.log));  // - (부수)효과를 each로 구분: each 함수의 반환값은 입력값과 동일하다. 그렇다면 이 함수가 하는 일은? 부수효과이다
+  }
+  f4(10);
+
+  console.clear();
+</script>
+
+8. 추억의 별 그리기, 구구단
+
+<script>
+  // 이터러블 프로그래밍으로 어떻게 코딩할 것인가에 대한 예시
+  const join = sep => _.reduce((a, b) => `${a}${sep}${b}`);
+
+  // type 1
+  _.go(
+          L.range(1, 6),
+          L.map(L.range),
+          L.map(L.map(_ => '*')),
+          L.map(join('')),
+          join('\n'),
+          console.log);
+
+  // type 2
+  _.go(
+          L.range(2, 10),
+          L.map(a => _.go(
+                  L.range(1, 10),
+                  L.map(b => `${a}x${b}=${a*b}`),
+                  join('\n')
+          )),
+          join('\n\n'),
+          console.log);
+
+  /*_.go(
+    L.range(1, 6),
+    L.map(s => _.go(
+      L.range(s),
+      L.map(_ => '*'),
+      _.reduce((a, b) => `${a}${b}`))),
+    _.reduce((a, b) => `${a}\n${b}`),
+    console.log);*/
+</script>
+
+</body>
+</html>
