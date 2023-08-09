@@ -1,0 +1,71 @@
+<script>const log = console.log</script>
+
+# 평가
+  - 코드가 계산(평가? Evaluation) 되어 값을 만드는 것
+
+# 일급
+  - 값으로 다룰 수 있다.
+  - 변수로 담을 수 있다.
+  - 변수의 인자로 사용될 수 있다.
+  - 함수의 결과(반환값)로 사용될 수 있다.
+
+<script>
+    const num1 = 1 + 2; // 3
+    const num2 = (1 + 2) + 4; // 7
+    const array1 = [1, 5]; // [1, 5];
+    const array2 = [1, 2 + 3]; // [1, 5]
+    const array3 = [1, 2, ...[3, 4]]; // [1, 2, 3, 4];
+
+    const a = 10;
+    const add10 = a => a + 10;
+    const r = add10(a);
+    log(r);
+</script>
+
+
+# 일급 함수
+  - 함수를 값으로 다룰 수 있다.
+  - 조합성과 추상화의 도구
+
+<script>
+    const add5 = a => a + 5;
+    log(add5);                  // 함수를 다른 함수의 인자로 넘겨줄 수 있다.
+    log(add5(5));               // 함수를 호출한 값을 함수로 넘겨줄 수 있다.(= 값으로 평가된 함수호출을 다른 함수의 인자로 넘겨줄 수 있다.)
+
+    const f1 = () => () => 1;   // 함수는 함수를 반환할 수 있다.
+    log(f1());                  // () => 1
+
+    const f2 = f1();            // 함수는 변수에 할당할 수 있다.
+    log(f2);
+    log(f2());
+</script>
+
+# 고차함수
+  - 함수를 값으로 다루는 함수
+    1. 함수를 인자로 받아서 실행하는 함수
+    2. 함수를 만들어서 리턴하는 함수(클로저를 만들어 리턴하는 함수)
+
+1. 함수를 인자로 받아서 실행하는 함수
+<script>
+    const apply1 = f => f(1);
+    const add2 = a => a + 2;
+    log(apply1(add2));        // 3
+    log(apply1(a => a - 1));  // 0
+
+    const times = (f, n) => {
+      let i = -1;
+      while (++i < n) f(i);
+    }
+
+    times(log, 3); // 0, 1, 2
+    times(a => log(a + 10), 3); // 10, 11, 12
+</script>
+
+2. 함수를 만들어서 리턴하는 함수(클로저를 만들어 리턴하는 함수)
+<script>
+  const addMaker = a => b => a + b;
+  const add10 = addMaker(10);
+  log(add10(5));      // 15
+  log(add10(10));     // 20
+  // a + b 값을 반환하는 함수(b => a + b)에서 a 값을 기억하고 있는 것이 클로저이다.
+</script>
