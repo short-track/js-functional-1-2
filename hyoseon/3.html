@@ -103,8 +103,50 @@
 
       console.log(mapObject(a => a + 10, obj)); //{a: 11, b: 12, c: 13, d: 14}
 
+      //7. pick(['key1', 'key2'], 객체)  -> 실행하면 {key1: 1, key2:2}를 반환하는 함수
 
-       
+      let pick = (keys, obj) => _.go(
+        keys,
+        _.map(key => [key, obj[key]]), //[[키, 값], [키,값]...]
+        OBJECT
+      )
+      const PICK = (keys, obj) => OBJECT(_.map(key => [key, obj[key]], keys))// pick과 PICK의 결과는 같다. 
+      console.log(pick(['b','c'], obj)) //{b: 2, c: 3}
+      console.log(PICK(['b','c'], obj)) //{b: 2, c: 3}
+
+      //다만 pick에서 obj에 없는 key를 찾으려고 하면 undefined가 반환된다. -> 이를 방지하기위해 reject추가 
+      pick = (keys, obj) => _.go(
+        keys,
+        L.map(key => [key, obj[key]]), 
+        L.reject(([key, value]) => value === undefined), //찾은 키의 값이 undefined이면 reject된다. 
+        OBJECT
+      )
+
+      //8. indexBy(user=> user.id, users) 라고 입력하면, user.id값이 index가 되도록 해줌
+      const users = [
+      { id: 10, name: 'AA', age: 35 },
+      { id: 20, name: 'BB', age: 26 },
+      { id: 30, name: 'CC', age: 28 },
+      { id: 40, name: 'CC', age: 34 },
+      { id: 50, name: 'EE', age: 23 }
+    ];
+
+    _.indexBy = (f, iter) => _.reduce((obj, a) => (obj[f(a)] = a, obj), {}, iter);
+
+    const USERS = _.indexBy(user => user.id, users); //users의 element의 id값과 index를 일치시킴 
+
+    console.log(USERS)// 객체로 반환 {10: {…}, 20: {…}, 30: {…}, 40: {…}, 50: {…}}
+    console.log(USERS[10]);//{id: 10, name: 'AA', age: 35}
+
+    //9. indexBy된 값을 filter하기 
+    const usersFilter = _.go(
+        USERS,  //객체로 반환되기 때문에 이터러블이 아님 => filter를 바로 적용할수 없음
+        L.entries, // [ [키,{값들...}], [키,{값들...}] ,... ]형태로 반환되어 순회가능 
+        L.filter(([_, {age}]) => age < 30), //구조분해로 [ _, {값들...} ]중 age를 꺼내어 조건문 적용
+        OBJECT,  //다시 객체로 반환
+       )
+
+    console.log(usersFilter[20])//{id: 20, name: 'BB', age: 26}
   </script>
 </body>
 </html>
