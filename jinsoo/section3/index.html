@@ -120,6 +120,67 @@
         console.log(m);
         console.log(object(m));
     </script>
+
+    6. mapObject
+
+    <script>
+        console.clear();
+
+        const mapObject = (f, obj) => _.go(
+            obj,
+            L.entries,
+            L.map(([k, v]) => [k, f(v)]),
+            object
+        )
+    </script>
+
+    7. pick
+    <script>
+        const obj2 = { a: 1, b: 2, c: 3, d: 4, e: 5 };
+
+        // const pick = (ks, obj) => object(_.map(k => [k, obj[k]], ks))
+
+        const pick = (ks, obj) => _.go(
+            ks,
+            L.map(k => [k, obj[k]]),
+            L.reject(([k, v]) => v === undefined),
+            object
+        )
+        console.log(pick(['z', 'b', 'c'], obj2))
+    </script>
+
+    8. indexBy
+
+    <script>
+        console.clear();
+        const users = [
+            { id: 5, name: 'AA', age: 35 },
+            { id: 10, name: 'BB', age: 26 },
+            { id: 19, name: 'CC', age: 28 },
+            { id: 23, name: 'DD', age: 34 },
+            { id: 24, name: 'EE', age: 23 },
+        ]
+
+        _.indexBy = (f, iter) => _.reduce((obj, a) => (obj[f(a)] = a, obj), {}, iter)
+
+        console.log(_.indexBy(u => u.id, users))
+
+        const users2 = _.indexBy(u => u.id, users);
+    </script>
+
+    9. indexBy 된 값을 filter 하기
+    <script>
+        console.clear();
+        console.log(_.filter(({ age }) => age >= 30, users))
+
+        _.go(
+            users2,
+            L.entries,
+            _.filter(([_, { age }]) => age >= 30),
+            object,
+            console.log
+        )
+    </script>
 </body>
 
 </html>
