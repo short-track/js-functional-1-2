@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="../fx.js"></script>
+</head>
+
+<body>
+    1. values
+    <script>
+        const obj1 = {
+            a: 1,
+            b: 2,
+            c: 3,
+            d: 4,
+        };
+        console.log(Object.values(obj1))
+
+        L.values = function* (obj) {
+            for (const k in obj) yield obj[k];
+        }
+        _.go(
+            obj1,
+            Object.values,
+            _.map(a => a + 10),
+            _.reduce((a, b) => a + b),
+            console.log
+        )
+
+        _.go(
+            obj1,
+            L.values,
+            L.map(a => a + 10),
+            L.take(2),
+            _.reduce((a, b) => a + b),
+            console.log
+        )
+    </script>
+
+    2. entries
+    <script>
+        console.clear();
+        L.entries = function* (obj) {
+            for (const k in obj) yield [k, obj[k]];
+        }
+
+        _.go(
+            obj1,
+            L.entries,
+            _.takeAll,
+            console.log
+        )
+
+        _.go(
+            obj1,
+            L.entries,
+            L.filter(([_, v]) => v % 2),
+            L.map(([k, v]) => ({ [k]: v })),
+            _.reduce(Object.assign),
+            console.log
+        )
+    </script>
+
+    3. keys
+
+    <script>
+        console.clear();
+
+        L.keys = function* (obj) {
+            for (const k in obj) yield k;
+        }
+
+        _.go(
+            obj1,
+            L.keys,
+            _.each(console.log)
+        )
+    </script>
+
+    4. 어떠한 값이든 이터러블 프로그래밍으로 다루기
+    - Array 등 이터러블로 이루어진 것을 활용하여 이터러블 프로그래밍을 해보았고,
+    객체를 이터러블로 다루는 방법을 알아보았다.
+    요 말은, 어떤 제네레이터 함수든 이터러블 프로그래밍으로 다룰 수 있다는 말이다.
+    <script>
+        const g1 = function* (stop) {
+            let i = -1;
+            while (++i < stop) {
+                console.log(i)
+                yield 10;
+                if (false) yield 20;
+                console.log(i)
+                yield 30;
+            }
+        }
+
+        console.log([...L.take(2, g1(10))])
+    </script>
+
+    5. object
+    <script>
+        console.clear();
+
+        const a = [['a', 1], ['b', 2], ['c', 3]]
+        const b = { a: 1, b: 2, c: 3 }
+
+        // const object = entries => _.go(
+        //     entries,
+        //     L.map(([k, v]) => ({ [k]: v })),
+        //     _.reduce(Object.assign)
+        // )
+
+        const object = entries => _.reduce((obj, [k, v]) => (obj[k] = v, obj), {}, entries)
+        console.log(object(a));
+
+        let m = new Map();
+        m.set('a', 10);
+        m.set('b', 20);
+        m.set('c', 30);
+        console.log(m);
+        console.log(object(m));
+    </script>
+</body>
+
+</html>
