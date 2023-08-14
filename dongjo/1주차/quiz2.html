@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>04/1</title>
+  <script src="../fx.js"></script>
+</head>
+<body>
+
+<script>
+const datas = ['one', 'two', 'three']
+
+_.groupBy = (arr, f) => _.go(
+    arr,
+    L.map(a => f(a)),
+    _.reduce((group, key) => {
+        group[key] = (group[key] || []).concat(key)
+        console.log(group)
+        return group
+    }, {}).
+    Object.entries,
+    L.map(([k, v]) => ({ [k]: v })),
+    _.reduce(Object.assign)
+)
+
+console.log(_.groupBy(datas, a => a.length))
+</script>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>04/1</title>
+  <script src="../fx.js"></script>
+</head>
+<body>
+
+<script>
+
+const 근태관리 = [
+    { name: 'joy', age: 20, history: [
+        { day: '2021-01-01', checkin: true },
+        { day: '2021-01-02', checkin: true },
+        { day: '2021-01-03', checkin: true },
+        { day: '2021-01-04', checkin: false },
+        { day: '2021-01-05', checkin: false },
+        { day: '2021-01-06', checkin: true },
+        { day: '2021-01-07', checkin: true },
+    ]},
+    { name: 'aron', age: 30, history: [
+        { day: '2021-01-01', checkin: true },
+        { day: '2021-01-02', checkin: false },
+        { day: '2021-01-03', checkin: true },
+        { day: '2021-01-04', checkin: true },
+        { day: '2021-01-05', checkin: false },
+        { day: '2021-01-06', checkin: false },
+        { day: '2021-01-07', checkin: true },
+    ]},
+    { name: 'paul', age: 24, history: [
+        { day: '2021-01-01', checkin: true },
+        { day: '2021-01-02', checkin: false },
+        { day: '2021-01-03', checkin: true },
+        { day: '2021-01-04', checkin: false },
+        { day: '2021-01-05', checkin: true },
+        { day: '2021-01-06', checkin: true },
+        { day: '2021-01-07', checkin: false },
+    ]},
+]
+
+
+const object = entries =>
+  _.reduce((obj, [k, v]) => (obj[k] = v, obj), {}, entries);
+
+_.go(
+    근태관리,
+    L.map(user => _.go(
+        user.history,
+        L.filter(({ checkin }) => !checkin),
+        _.takeAll()
+    )),
+    L.map(user => [user.name, user.history.length]),
+    object,
+    console.log);
+</script>
