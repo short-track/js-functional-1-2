@@ -93,7 +93,8 @@ const query3 = obj =>
   join('&',
     _.map(([k, v]) => `${k}=${v}`,
       _.reject(([_, v]) => v === undefined,
-        Object.entries(obj))));
+        Object.entries(obj)))
+);
 
 console.log(query3(obj1));
 
