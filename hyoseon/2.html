@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>functional JS - #2</title>
+  <style>
+  </style>
+</head>
+<body>
+  
+  <script src="./fx.js"></script> 
+  <script>
+    const log = console.log;
+    //1. 안전한 합성을 위한 map활용법
+    const f = x => x + 10;
+    const g = x => x - 5;
+    const fg = x => f(g(x));
+
+    log(fg(10)); //인자에 어떤값이 들어올지 알지 못하는 상황을 대응 할수 있어야 한다.
+
+    _.go(
+      10, //인자에 빈값이 들어와도 문제없도록 함수 합성해보기  => map활용
+      fg,
+      log
+    )
+
+    _.go(
+      [10], 
+      L.map(fg),
+      _.each(log)
+    )
+
+    _.go(
+      [], //빈값이 들어와도 실행되지 않아서 에러나지 않음
+      L.map(fg),
+      _.each(log)
+    )
+
+    //2. find 대신 L.filter써보기
+    const users = [
+      { name: 'AA', age: 35 },
+      { name: 'BB', age: 26 },
+      { name: 'CC', age: 28 },
+      { name: 'CC', age: 34 },
+      { name: 'EE', age: 23 }
+    ];
+
+   const user =  _.find(user => user.name == 'BB', users);
+   if(user){console.log(user)} //user값이 있으면 콘솔에 실행 
+                               //=> but 찾고자 하는 값이 없을 때 undefined로 에러남 
+    
+   _.each(log,
+    L.take(1,
+      L.filter(u => u.name == 'BB', users))); //찾고자 하는 값이 없어도 에러안남
+
+   _.go(users,   //go 로 리팩토링
+     L.filter(u => u.name == 'AA'),
+     L.map(u => u.age),
+     L.take(1),
+     _.each(log));
+  </script>
+</body>
+</html>
