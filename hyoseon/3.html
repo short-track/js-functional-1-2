@@ -147,6 +147,71 @@
        )
 
     console.log(usersFilter[20])//{id: 20, name: 'BB', age: 26}
+
+    //발제문 1
+    /* 
+      - if 대신 filter로 
+      - 값변화 후 반영할 땐  map으로 
+      - break대신 take로
+      - 병합 (string, dom)은 reduce로 
+      - while대신 range로 
+
+    */
+
+    //발제문 2
+    const 근태관리 = [
+    { name: 'joy', age: 20, history: [
+        { day: '2021-01-01', checkin: true },
+        { day: '2021-01-02', checkin: true },
+        { day: '2021-01-03', checkin: true },
+        { day: '2021-01-04', checkin: false },
+        { day: '2021-01-05', checkin: false },
+        { day: '2021-01-06', checkin: true },
+        { day: '2021-01-07', checkin: true },
+    ]},
+    { name: 'aron', age: 30, history: [
+        { day: '2021-01-01', checkin: true },
+        { day: '2021-01-02', checkin: false },
+        { day: '2021-01-03', checkin: true },
+        { day: '2021-01-04', checkin: true },
+        { day: '2021-01-05', checkin: false },
+        { day: '2021-01-06', checkin: false },
+        { day: '2021-01-07', checkin: true },
+    ]},
+    { name: 'paul', age: 24, history: [
+        { day: '2021-01-01', checkin: true },
+        { day: '2021-01-02', checkin: false },
+        { day: '2021-01-03', checkin: true },
+        { day: '2021-01-04', checkin: false },
+        { day: '2021-01-05', checkin: true },
+        { day: '2021-01-06', checkin: true },
+        { day: '2021-01-07', checkin: false },
+    ]},
+]
+const 불참 = data => _.go(
+    data,
+    _.map(person => ({
+        name: person.name,
+        checkinCount: _.reduce(
+            (count, entry) => !entry.checkin ? count + 1 : count,
+            0,
+            person.history
+        )
+    })), //[{name: 'joy', checkinCount: 2}, ...]
+    _.map(({ name, checkinCount }) => ({ [name]: checkinCount })), //[{joy: 2},...]
+    //_.reduce((a, b) => ({ ...a, ...b }), {}) 
+);
+
+const output = 불참(근태관리);
+console.log(output); // { joy: 2, aron: 3, paul: 3 }
+
+// 출력값
+// { joy: 2, aron: 3, paul: 3 }
+
+//발제문 3
+const groupBy = (iter, f) => _.reduce((obj, a) => (obj[f(a)] = a, obj), {}, iter);
+const result = groupBy(['one', 'two', 'three'], s => s.length);
+console.log(result); // {3: 'two', 5: 'three'} 
   </script>
 </body>
 </html>
