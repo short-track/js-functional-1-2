@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="../fx.js"></script>
+</head>
+
+<body>
+    ## 시간을 이터러블로 다루기
+
+    1. range와 take의 재해석
+    <script>
+        _.go(
+            _.range(10),
+            _.take(3),
+            console.log
+        )
+
+        _.go(
+            L.range(10),
+            L.take(3), // 최대 3개의 값을 필요하고, 최대 3번의 일을 수행
+            console.log
+        )
+
+        _.go(
+            L.range(1, 10),
+            // L.map(_.delay(1000)),
+            L.filter(a => a % 2),
+            L.map(_ => new Date()),
+            L.take(3), // 최대 3개의 값을 필요하고, 최대 3번의 일을 수행
+            _.each(console.log)
+        )
+    </script>
+
+    2. takeWhile, takeUntil
+
+    <script>
+        console.clear();
+        _.go(
+            [1, 2, 3, 4, 5, 6, 7, 8, 0, 0],
+            _.takeWhile(a => a),
+            _.each(console.log)
+        )
+
+        _.go(
+            [1, 2, 3, 4, 5, 6, 7, 8, 0, 0],
+            _.takeUntil(a => a),
+            _.each(console.log)
+        )
+    </script>
+
+    3. 할 일들을 이터러블(리스트)로 바라보기
+    <script>
+        console.clear();
+        const track = [
+            { cars: ['철수', '영희', '철희', '영수'] },
+            { cars: ['하든', '커리', '듀란트', '탐슨'] },
+            { cars: ['폴', '어빙', '릴라드', '맥컬럼'] },
+            { cars: ['스파이더맨', '아이언맨'] },
+            { cars: [] }
+        ];
+
+        _.go(
+            L.range(Infinity),
+            L.map(i => track[i]),
+            L.map(({ cars }) => cars),
+            L.map(_.delay(1000)),
+            L.takeWhile(({ length: l }) => l === 4),
+            // L.takeUntil(({ length: l }) => l < 4),
+            L.flat,
+            L.map(car => `${car} 출발!`),
+            _.each(console.log)
+        )
+    </script>
+
+    4. 아임포트 결제 누락 스케쥴러 만들기
+
+    <script>
+        const Impt = {
+            payments: {
+                1: [
+                    { imp_id: 11, order_id: 1, amount: 15000 },
+                    { imp_id: 12, order_id: 2, amount: 25000 },
+                    { imp_id: 13, order_id: 3, amount: 10000 }
+                ],
+                2: [
+                    { imp_id: 14, order_id: 4, amount: 25000 },
+                    { imp_id: 15, order_id: 5, amount: 45000 },
+                    { imp_id: 16, order_id: 6, amount: 15000 }
+                ],
+                3: [
+                    { imp_id: 17, order_id: 7, amount: 20000 },
+                    { imp_id: 18, order_id: 8, amount: 30000 }
+                ],
+                4: [],
+                5: [],
+                //...
+            },
+        };
+    </script>
+</body>
+
+</html>
