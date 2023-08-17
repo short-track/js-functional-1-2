@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>functional JS - #5</title>
+  <style>
+  </style>
+</head>
+<body>
+  
+  <script src="./fx.js"></script> 
+  <script>
+  //시간을 이터러블로 다루기 (일어날 일을 이터러블로 바라보자)
+  // 1. range와 take의 재해석
+  _.go(
+  _.range(10), // <-- 0 부터 9까지의 배열
+  _.take(3),   // <-- 앞에서부터 3개만 자르기
+  _.each(console.log)
+  );
+
+  _.go(           // L.range(Infinity)여도 컴퓨터에 무리가지 않음 <-- 지연평가 되니까! 
+    L.range(10),  // <-- 0 부터 9까지의 이터러블, "최대 10번 일어날 일"
+    _.take(3),    // <-- 최대 3개의 값을 필요하고, 최대 3번의 일을 수행
+    _.each(console.log)
+    );
+
+  _.delay(1000, '안녕').then(console.log); // <--1초 뒤에 '안녕'을 then으로 전달하여 console.log실행
+
+  let f = _.delay(1000);     //<--1초 뒤에 값전달
+  f('hello').then(console.log) // f로 값'hello'를 넘겨서 f는 1초뒤 값을 리턴하고 then에서 console.log실행
+
+  _.go(
+  L.range(1, 10), 
+  L.map(_.delay(1000)),
+  L.filter(a => a % 2),
+  L.map(_ => new Date()),
+  L.take(3), //<-- 위 코드를 1번째, 2번째, 3번째 로 지연평가를 기다린후 _each로 넘김
+  _.each(console.log)); //하나씩 3개값이 실행됨 
+
+  _.go(
+  L.range(1, 10), 
+  L.map(_.delay(1000)),
+  L.filter(a => a % 2),
+  L.map(_ => new Date()),
+  _.take(3), //<-- 위 코드중 앞에 3개를 take에서 평가하기 때문에 3개 평가후 each에게 넘김(_.delay(1000)*3 term소요후) 
+  _.each(console.log)); //한번에 3개값이 실행됨
+
+
+  //2. takeWhile, takeUntil
+  _.go(
+    [1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0],
+    _.takeWhile(a => a),  //falsy전까지 실행
+    _.each(console.log)); //1 2 3 4 5 6 7 8까지 실행
+
+  _.go(
+    [1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0],
+    _.takeUntil(a => a),  //truthy를 만날 때까지 실행 
+    _.each(console.log)); //1까지만 실행
+
+  _.go(
+    [0, false, undefined, null, 10, 20, 30],
+    _.takeUntil(a => a),
+    _.each(console.log));
+
+  //3. 할 일들을 이터러블 (리스트)로 바라보기
+  const track = [
+    { cars: ['철수', '영희', '철희', '영수'] },
+    { cars: ['하든', '커리', '듀란트', '탐슨'] },
+    { cars: ['폴', '어빙', '릴라드', '맥컬럼'] },
+    { cars: ['스파이더맨', '아이언맨'] },
+    { cars: [] }
+  ];
+
+  _.go(
+    L.range(Infinity), //무한 수열 지연적으로 생성
+    L.map(i => track[i]), //i++로 1부터 들어감  
+    L.map(({cars}) => cars), //객체형태로 들어온 값을 구조분해해서 배열로 꺼내고, 
+    L.map(_.delay(2000)),  //2초씩 텀두기 
+    L.takeWhile(({length: l}) => l == 4), //배열의 길이가 4인 것만 실행 
+        // L.takeUntil(({length: l}) => l < 4), <-- 배열의 길이가 4이하인것을 만날때까지 실행
+        //(4이하인 팀이나오면 다음 팀은 명수가 없는 것임을 이용함)
+    L.flat,                       //배열을 펼쳐서 
+    L.map(car => `${car} 출발!`), //인원 이름과 함께 원하는 문자열 결합후
+    _.each(console.log));         //콘솔에 찍기 
+
+  //4. 아임포트 결제 누락 스케줄러 만들기 
+  const Impt = {
+    payments: {
+      1: [
+        { imp_id: 11, order_id: 1, amount: 15000 },
+        { imp_id: 12, order_id: 2, amount: 25000 },
+        { imp_id: 13, order_id: 3, amount: 10000 }
+      ],
+      2: [
+        { imp_id: 14, order_id: 4, amount: 25000 },
+        { imp_id: 15, order_id: 5, amount: 45000 },
+        { imp_id: 16, order_id: 6, amount: 15000 }
+      ],
+      3: [
+        { imp_id: 17, order_id: 7, amount: 20000 },
+        { imp_id: 18, order_id: 8, amount: 30000 }
+      ],
+      4: [],
+      5: [],
+      //...
+    },
+    getPayments: page => {
+      console.log(`http://..?page=${page}`);
+      return _.delay(1000 * 1, Impt.payments[page]);
+    },
+    cancelPayment: imp_id => Promise.resolve(`${imp_id}: 취소완료`)
+  };
+
+
+  </script>
+</body>
+</html>
