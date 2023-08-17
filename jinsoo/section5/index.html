@@ -61,22 +61,23 @@
             { cars: [] }
         ];
 
-        _.go(
-            L.range(Infinity),
-            L.map(i => track[i]),
-            L.map(({ cars }) => cars),
-            L.map(_.delay(1000)),
-            L.takeWhile(({ length: l }) => l === 4),
-            // L.takeUntil(({ length: l }) => l < 4),
-            L.flat,
-            L.map(car => `${car} 출발!`),
-            _.each(console.log)
-        )
+        // _.go(
+        //     L.range(Infinity),
+        //     L.map(i => track[i]),
+        //     L.map(({ cars }) => cars),
+        //     L.map(_.delay(1000)),
+        //     L.takeWhile(({ length: l }) => l === 4),
+        //     // L.takeUntil(({ length: l }) => l < 4),
+        //     L.flat,
+        //     L.map(car => `${car} 출발!`),
+        //     _.each(console.log)
+        // )
     </script>
 
     4. 아임포트 결제 누락 스케쥴러 만들기
 
     <script>
+        console.clear();
         const Impt = {
             payments: {
                 1: [
@@ -97,7 +98,57 @@
                 5: [],
                 //...
             },
-        };
+            getPayments: page => {
+                console.log(`http://..?page=${page}`);
+                return _.delay(100, Impt.payments[page]);
+            },
+            cancelPayment: imp_id => Promise.resolve(`${imp_id} 취소완료`)
+        }
+
+        const DB = {
+            getOrders: ids => _.delay(100, [
+                { id: 1 },
+                { id: 3 },
+                { id: 7 },
+            ])
+        }
+
+        async function job() {
+            // 결제된 결제모듈측 payments 가져온다.
+            // page 단위로 가져오는데, 결제 데이터가 있을 때까지 모두 가져와서 하나로 합친다.
+
+            const payments = await _.go(
+                L.range(1, Infinity),
+                L.map(Impt.getPayments),
+                L.takeUntil((({ length }) => length < 3)),
+                _.flat)
+
+            // 결제가 실제로 완료된 가맹점 측 주문서 id들을 뽑는다.
+            const orderIds = await _.go(
+                payments,
+                _.map(({ order_id }) => order_id),
+                DB.getOrders,
+                _.map(({ id }) => id),
+            )
+
+            await _.go(
+                payments,
+                L.reject(({ order_id }) => orderIds.includes(order_id)),
+                L.map(p => p.imp_id),
+                L.map(Impt.cancelPayment),
+                _.each(console.log)
+                )
+
+        }
+
+        // 5초에 한번 한다.
+        // 만약 job이 5초보다 더 걸리면, job이 끝날 때까지
+        (function recur() {
+            Promise.all([
+                _.delay(5000, undefined),
+                job(),
+            ]).then(recur);
+        })();
     </script>
 </body>
 
