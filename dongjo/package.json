@@ -5,6 +5,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "fxjs": "^0.21.3",
     "lodash-es": "^4.17.21"
   }
 }
