@@ -52,7 +52,7 @@
                                //=> but 찾고자 하는 값이 없을 때 undefined로 에러남 
     
    _.each(log,
-    L.take(1,
+      L.take(1,
       L.filter(u => u.name == 'BB', users))); //찾고자 하는 값이 없어도 에러안남
 
    _.go(users,   //go 로 리팩토링

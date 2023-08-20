@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>functional JS - #5</title>
+  <style>
+  </style>
+</head>
+<body>
+  
+  <script src="./fx.js"></script> 
+  <script>
+  //시간을 이터러블로 다루기 (일어날 일을 이터러블로 바라보자)
+  // 1. range와 take의 재해석
+  _.go(
+  _.range(10), // <-- 0 부터 9까지의 배열
+  _.take(3),   // <-- 앞에서부터 3개만 자르기
+  //_.each(console.log)
+  );
+
+  _.go(           // L.range(Infinity)여도 컴퓨터에 무리가지 않음 <-- 지연평가 되니까! 
+    L.range(10),  // <-- 0 부터 9까지의 이터러블, "최대 10번 일어날 일"
+    _.take(3),    // <-- 최대 3개의 값을 필요하고, 최대 3번의 일을 수행
+   // _.each(console.log)
+    );
+
+  //_.delay(1000, '안녕').then(console.log); // <--1초 뒤에 '안녕'을 then으로 전달하여 console.log실행
+
+  let f = _.delay(1000);     //<--1초 뒤에 값전달
+  //f('hello').then(console.log) // f로 값'hello'를 넘겨서 f는 1초뒤 값을 리턴하고 then에서 console.log실행
+
+  /* _.go(
+  L.range(1, 10), 
+  L.map(_.delay(1000)),
+  L.filter(a => a % 2),
+  L.map(_ => new Date()),
+  L.take(3), //<-- 위 코드를 1번째, 2번째, 3번째 로 지연평가를 기다린후 _each로 넘김
+  _.each(console.log)); //하나씩 3개값이 실행됨  */
+
+  /* _.go(
+  L.range(1, 10), 
+  L.map(_.delay(1000)),
+  L.filter(a => a % 2),
+  L.map(_ => new Date()),
+  _.take(3), //<-- 위 코드중 앞에 3개를 take에서 평가하기 때문에 3개 평가후 each에게 넘김(_.delay(1000)*3 term소요후) 
+  _.each(console.log)); //한번에 3개값이 실행됨 */
+
+
+  //2. takeWhile, takeUntil
+   _.go(
+    [1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0],
+    _.takeWhile(a => a),  //falsy전까지 실행
+    //_.each(console.log)
+    ); //1 2 3 4 5 6 7 8까지 실행 
+
+   _.go(
+    [1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0],
+    _.takeUntil(a => a),  //truthy를 만날 때까지 실행 
+    //_.each(console.log)
+    ); //1까지만 실행
+
+  _.go(
+    [0, false, undefined, null, 10, 20, 30],
+    _.takeUntil(a => a),
+    //_.each(console.log)
+    ); 
+
+  //3. 할 일들을 이터러블 (리스트)로 바라보기
+  const track = [
+    { cars: ['철수', '영희', '철희', '영수'] },
+    { cars: ['하든', '커리', '듀란트', '탐슨'] },
+    { cars: ['폴', '어빙', '릴라드', '맥컬럼'] },
+    { cars: ['스파이더맨', '아이언맨'] },
+    { cars: [] }
+  ];
+
+  _.go(
+    L.range(Infinity), //무한 수열 지연적으로 생성
+    L.map(i => track[i]), //i++로 1부터 들어감  
+    L.map(({cars}) => cars), //객체형태로 들어온 값을 구조분해해서 배열로 꺼내고, 
+    L.map(_.delay(2000)),  //2초씩 텀두기 
+    L.takeWhile(({length: l}) => l == 4), //배열의 길이가 4인 것만 실행 
+        // L.takeUntil(({length: l}) => l < 4), <-- 배열의 길이가 4이하인것을 만날때까지 실행
+        //(4이하인 팀이나오면 다음 팀은 명수가 없는 것임을 이용함)
+    L.flat,                       //배열을 펼쳐서 
+    L.map(car => `${car} 출발!`), //인원 이름과 함께 원하는 문자열 결합후
+ //   _.each(console.log)
+ );         //콘솔에 찍기 
+
+  //4. 아임포트 결제 누락 스케줄러 만들기 
+  const Impt = {
+    payments: {
+      1: [
+        { imp_id: 11, order_id: 1, amount: 15000 },
+        { imp_id: 12, order_id: 2, amount: 25000 },
+        { imp_id: 13, order_id: 3, amount: 10000 }
+      ],
+      2: [
+        { imp_id: 14, order_id: 4, amount: 25000 },
+        { imp_id: 15, order_id: 5, amount: 45000 },
+        { imp_id: 16, order_id: 6, amount: 15000 }
+      ],
+      3: [
+        { imp_id: 17, order_id: 7, amount: 20000 },
+        { imp_id: 18, order_id: 8, amount: 30000 }
+      ],
+      4: [],
+      5: [],
+      //...
+    },
+    getPayments: page => {
+      console.log(`http://..?page=${page}`);
+      return _.delay(1000 * 1, Impt.payments[page]);
+    },
+    cancelPayment: imp_id => Promise.resolve(`${imp_id}: 취소완료`)
+  };
+  const DB = {
+    getOrders: ids => _.delay(100, [
+      { id: 1 },
+      { id: 3 },
+      { id: 7 }
+    ])
+  };
+
+  async function job() {
+    // 결제된 결제모듈측 payments 가져온다.
+    // page 단위로 가져오는데,
+    // 결제 데이터가 있을 때까지 모두 가져와서 하나로 합친다.
+    const payments = await _.go(
+      L.range(1, Infinity),
+      L.map(Impt.getPayments),
+      L.takeUntil(({length}) => length < 3),
+      _.flat);
+
+    // 결제가 실제로 완료된 가맹점 측 주문서 id들을 뽑는다.
+    const order_ids = await _.go(
+      payments,
+      _.map(p => p.order_id),
+      DB.getOrders,
+      _.map(({id}) => id));
+
+    // 결제모듈의 payments와 가맹점의 주문서를 비교해서
+    // 결제를 취소해야할 id들을 뽑아서
+    // 결제 취소 api를 실행
+   await _.go(
+      payments,
+      L.reject(p => order_ids.includes(p.order_id)),
+      L.map(p => p.imp_id),
+      L.map(Impt.cancelPayment),
+     // _.each(console.log)
+     );
+  } 
+
+  // 5초에 한 번만 한다.
+  // 그런데 만일 job 7초보다 더 걸리면, job이 끝날 때까지
+ /*  (function recur() {
+    Promise.all([  
+      _.delay(7000, undefined), 
+      job()
+    ]).then(recur);
+  }) (); */
+
+
+  /* [발제문 1] 시간을 이터러블로 다룬다는 것은 어떤 의미인가요?
+                강의를 듣고 자신이 이해한 대로 자유롭게 설명해봅시다.
+
+나의 답변 : 일어날 일을 이터러블로 바라보자는 것 
+-> 일어날 일이 이터러블이라면 ? 
+우리가 배운 함수형 프로그래밍을 적용할 수 있다는 것이고,
+지연평가를 통해 효율적 프로그래밍 가능
+*/
+
+/* [발제문 2]
+당신의 서버에서 카카오 PUSH API를 통해서 사용자들에게 PUSH 알림을 발송해야하는 상황입니다.
+
+아래에 제시된 데이터를 가공해서, 메시지를 만들고 전송합니다. 이때 아래의 조건을 만족하는 user에게만 전송하세요.
+
+- 나이 30 세 이하
+- 성별 여성
+
+ 전송이 각 user 에게 PUSH 전송이 성공할 때마다 아래의 데이터를 업데이트 해주세요.
+
+- user 의 데이터중 isSuccess 를 true 로 넣어 주세요.
+
+모든 작업이 끝나면
+
+- 성공했을 시
+- 실패했을 시 
+
+에 대한 처리를 각각 해주세요.
+
+**주의
+언제나 그렇듯 네트워크의 요청/응답의 도달 시간은 우리가 제어할 수 없습니다. */
+
+let users = [
+	{ name: 'A', phone: '010-0000-0000', kakaoToken: 'adfjladfjdafs', age: 25, gender: '남성', isSuccess: null },
+	{ name: 'B', phone: '010-0000-0000', kakaoToken: 'adfjladfjdafs', age: 30, gender: '남성', isSuccess: null },
+	{ name: 'C', phone: '010-0000-0000', kakaoToken: 'adfjladfjdafs', age: 34, gender: '여성', isSuccess: null },
+	{ name: 'D', phone: '010-0000-0000', kakaoToken: 'adfjladfjdafs', age: 24, gender: '여성', isSuccess: null },
+	{ name: 'E', phone: '010-0000-0000', kakaoToken: 'adfjladfjdafs', age: 22, gender: '여성', isSuccess: null },
+  { name: 'F', phone: '010-0000-0000', kakaoToken: 'adfjladfjdafs', age: 19, gender: '남성', isSuccess: null }
+]
+
+// [조건 1] 전송할 메시지
+// - '{??}님 공부합시다.'
+
+const 조건을만족하는이름모으기 = _.go(
+  users,
+  L.filter(user => user.gender === '여성' && user.age <= 30),
+  L.map(user => user.name),
+  _.takeAll,
+  console.log
+); //['d', 'e']
+
+
+// [조건 2] 카카오 PUSH 전송 API는 아래 함수를 사용해주세요
+const sendPushMsg = (msg, token) => {
+    return _.delay(1000 * 1, msg, token);
+}
+const result = _.go(
+  users,
+  L.filter(user => user.gender === '여성' && user.age <= 30),
+  L.map(user => `${user.name}님 공부합시다.`),
+  //L.map(message => sendPushMsg(message, user.kakaoToken)), // 각 메시지에 대해 sendPushMsg 호출
+ // _.takeAll,
+ // console.log
+);//['D님 공부합시다.', 'E님 공부합시다.']
+
+
+
+// [조건 3] 모든 전송 작업이 완료 되었을 시 해줘야 할 작업
+// 성공했을 때 메시지
+// 'N명 모두 전송을 완료했습니다.'
+
+Promise.all(result)
+.then(res=> console.log(`${res.length}명 모두 전송을 완료했습니다.`))
+.catch(err => console.log(`${res.length}명 전송을 실패했습니다.`));
+
+// 실패했을 때 메시지
+// 'N명 전송을 실패했습니다.'
+  </script>
+</body>
+</html>
