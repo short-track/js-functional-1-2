@@ -79,13 +79,79 @@
             $.el,
             $.append($.qs('body')),
             $.findAll('.image'),
-            $.on('click', e => _.go(
-                e.currentTarget,
-                $.closest('.image'),
-                $.remove
-            ))
+            $.on('click', async ({currentTarget:ct}) => 
+                await Ui.confirm('정말 삭제 하시겠습니까?') && 
+                _.go(
+                    ct,
+                    $.closest('.image'),
+                    $.remove
+                )
+            )
         )
 
+    </script>
+
+    
+    <script>
+        // 경고창 만들기
+        const Ui = {}
+        
+        // 다른 관점으로 보면 curry의 역할이 constructor가 아닌가 하는 생각이 든다.
+        // curry는 필요한 값들을 받기 전까지 실행을 지연하고
+        // constructor는 생성될 때 필요한 값들을 먼저 받는다.
+        // 한번에, 모두 받느냐 여러번 걸쳐서 차례로 받느냐의 차이가 있을 뿐
+        // 비슷한 역할이라는 생각이 들었고 그렇기 때문에 강의에서
+        // curry를 이용하여 함수를 클래스처럼 사용 가능한게 아닌가 하는 생각이 든다. 
+        Ui.message = _.curry((buttons, msg) => new Promise(resolve => _.go(
+            `
+                <div class="confirm">
+                    <div class="body">
+                        <div class="msg">${msg}</div>
+                        <div class="buttons">
+                            ${strMap(button => `<button type="button" class="${button.klass}">${button.name}</button>`, buttons)}                            
+                        </div>
+                    </div>
+                </div>
+            `,
+            $.el,
+            $.append($.qs('body')),
+            ..._.map(button => _.tap(
+                $.find(`.${button.klass}`),
+                $.on('click', e => _.go(
+                    e.currentTarget,
+                    $.closest('.confirm'),
+                    $.remove,
+                    _ => resolve(button.value)
+                ))
+            ), buttons)
+        )))
+        
+        Ui.confirm = Ui.message([
+                {
+                    name: '취소',
+                    klass: 'cancel',
+                    value: false
+                },
+                {
+                    name: '확인',
+                    klass: 'ok',
+                    value: true
+                }
+            ]
+        )
+
+        Ui.alert = Ui.message(
+            [
+                {
+                    name: '확인',
+                    klass: 'ok',
+                    value: true
+                }
+            ]
+            
+        )
+        
+        Ui.alert('삭제되었습니다')
     </script>
 </body>
 </html>
