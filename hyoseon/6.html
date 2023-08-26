@@ -141,6 +141,7 @@
           _.isIterable(els) ? els : [els] //하나인 element도 이터러블로 만들기위함
         );
     </script>
+
     <script>
       //프론트엔드에서 함수형/ 이터러블/ 동시성 프로그래밍
       //1. ES6 템플릿 리터럴 활용
@@ -593,40 +594,351 @@
                                   )}
                                </div>
                               `;
-      _.go(
+      /*  _.go(
         Images.fetch(),
-        Images.tmpl,
-        $.el,
-        $.append($.qs('body')),
-        $.findAll('.remove')
-        /*  $.on('click', (e) =>
+        Images.tmpl
+        //$.el,
+        //$.append($.qs('body')),
+        //$.findAll('.remove')
+          $.on('click', (e) =>
           _.go(
             e.currentTarget,
             $.closest('.images'), //$.closest만들기 + curry적용해서 간결하게만들기
             $.remove //$.remove만들어서 표현하기
             //console.log
           )
-        ) */
-      ); //많이 버벅거리는 상태...ㅠㅠ
+        )
+      ); */ //많이 버벅거리는 상태...ㅠㅠ
+
       //4. 커스텀 confirm창과 Promise
-      _.go(
+      /* _.go(
         Images.fetch(),
         Images.tmpl,
         $.el,
         $.append($.qs('body')),
         $.findAll('.remove'),
-        $.on('click', (e) => {
-          if (confirm('정말 삭제하시겠습니까?')) {
+        $.on('click', async ({ currentTarget: ct }) => {
+          (await Ui.confirm('정말 삭제하시겠습니까?')) &&
             _.go(
-              e.currentTarget,
+              ct,
               $.closest('.images'),
               $.remove
               //console.log
             );
-          }
         })
-      );
+      ); */
+
+      const Ui = {};
+
+      Ui.confirm = (msg) =>
+        _.go(
+          `
+          <div class="confirm">
+            <div class="body">
+              <div class="msg">${msg}</div>
+                <div class="buttons">
+                  <button type="button" class="cancel">취소</button>
+                  <button type="button" class="ok">확인</button>
+                </div>
+            </div>
+          </div>
+        `,
+          $.el,
+          $.append($.qs('body')),
+          _.tap(
+            $.find('.ok'),
+            $.on('click', (e) =>
+              _.go(e.currentTarget, $.closest('.confirm'), $.remove, (_) =>
+                resolve(true)
+              )
+            )
+          ),
+          _.tap(
+            $.find('.cancel'),
+            $.on('click', (e) =>
+              _.go(e.currentTarget, $.closest('.confirm'), $.remove, (_) =>
+                resolve(false)
+              )
+            )
+          )
+        );
       //5. 클래스를 대신 함수로 하는 추상화
+      //Ui.confirm을 만든 방식으로 Ui.alert을 만든다고 했을 때 중복이 많아짐
+      //=> 상위 함수Ui.message를 만들어 활용
+
+      Ui.message = _.curry(
+        (btns, msg) =>
+          new Promise((resolve) =>
+            _.go(
+              `
+                <div class="confirm">
+                  <div class="body">
+                    <div class="msg">${msg}</div>
+                    <div class="buttons">
+                      ${_.strMap(
+                        (btn) => `
+                                  <button type="button" class="${btn.type}">${btn.name}</button>
+                                  `,
+                        btns
+                      )}
+                    </div>
+                  </div>
+                </div>
+              `,
+              $.el,
+              $.append($.qs('body')),
+              ..._.map(
+                (btn) =>
+                  _.tap(
+                    $.find(`.${btn.type}`),
+                    $.on('click', (e) =>
+                      _.go(
+                        e.currentTarget,
+                        $.closest('.confirm'),
+                        $.remove,
+                        (_) => resolve(btn.value)
+                      )
+                    )
+                  ),
+                btns
+              )
+            )
+          )
+      );
+
+      Ui.confirm = Ui.message([
+        { name: '취소', type: 'cancel', value: false },
+        { name: '확인', type: 'ok', value: true },
+      ]);
+
+      Ui.alert = Ui.message([{ name: '확인', type: 'ok', value: true }]);
+
+      Ui.remover = (btnSel, targetSel, before = (a) => a, after = (a) => a) =>
+        _.tap(
+          $.findAll(btnSel),
+          $.on(
+            'click',
+            async ({ currentTarget: ct }) =>
+              (await Ui.confirm('정말 삭제하시겠습니까?')) &&
+              _.go(
+                ct,
+                $.closest(targetSel),
+                _.tap(before),
+                $.remove,
+                _.tap(after)
+              )
+          )
+        );
+      //6. 이미지 동시성 다루기
+      /* _.go(
+        Images.fetch(),
+        Images.tmpl,
+        $.el,
+        $.append($.qs('body')),
+        _.tap(
+          $.findAll('img'),
+          L.map(
+            (img) =>
+              new Promise((res) => {
+                img.onload = () => res(img);
+                img.src = img.getAttribute('lazy-src');
+              })
+          ),
+          // C.takeAll,
+          _.each((img) => img.classList.add('fade-in'))
+          //console.log
+        ),
+        $.findAll('.remove'),
+        $.on('click', async ({ currentTarget: ct }) => {
+          (await Ui.confirm('정말 삭제하시겠습니까?')) &&
+            _.go(
+              ct,
+              $.closest('.images'),
+              $.remove
+              //console.log
+            );
+        })
+      ); */
+      //7. 동시성 부하 조절
+      /* _.go(
+        Images.fetch(),
+        Images.tmpl,
+        $.el,
+        $.append($.qs('body')),
+        _.tap(
+          $.findAll('img'),
+          L.map(
+            (img) => (_) =>
+              new Promise((res) => {
+                img.onload = () => res(img);
+                img.src = img.getAttribute('lazy-src');
+              })
+          ),
+          (lazy) => {
+            let r = L.range(Infinity);
+            return _.go(
+              lazy,
+              _.groupBy((_) => Math.floor(r.next().value / 4)),
+              L.values,
+              L.map(L.map((f) => f())),
+              L.map(C.takeAll),
+              _.each(_.each((img) => img.classList.add('fade-in')))
+            );
+          }
+        ),
+        $.findAll('.remove'),
+        $.on('click', async ({ currentTarget: ct }) => {
+          (await Ui.confirm('정말 삭제하시겠습니까?')) &&
+            _.go(
+              ct,
+              $.closest('.images'),
+              $.remove
+              //console.log
+            );
+        })
+      ); */
+
+      Images.loader = (limit) =>
+        _.tap(
+          $.findAll('img'),
+          L.map(
+            (img) => (_) =>
+              new Promise((res) => {
+                img.onload = () => res(img);
+                img.src = img.getAttribute('lazy-src');
+              })
+          ),
+          (lazy) => {
+            let r = L.range(Infinity);
+            return (
+              _.go(
+                lazy,
+                _.groupBy((_) => Math.floor(r.next().value / limit)),
+                L.values,
+                L.map(L.map((f) => f())),
+                L.map(C.takeAll)
+              ),
+              _.each(_.each((img) => img.classList.add('fade-in')))
+            );
+          }
+        );
+      /* _.go(
+        Images.fetch(),
+        Images.tmpl,
+        $.el,
+        $.append($.qs('body')),
+        Images.loader(4),
+        $.findAll('.remove'),
+        $.on('click', async ({ currentTarget: ct }) => {
+          (await Ui.confirm('정말 삭제하시겠습니까?')) &&
+            _.go(
+              ct,
+              $.closest('.images'),
+              $.remove
+              //console.log
+            );
+        })
+      ); */
+      //8. 고차함수로 더 작게 나누어 재사용성 높이기 - 데이터형 없애기
+      C.takeAllWithLimit = _.curry((limit, iter) => {
+        let r = L.range(Infinity);
+        return _.go(
+          iter,
+          _.groupBy((_) => Math.floor(r.next().value / limit)),
+          L.values,
+          L.map(L.map((f) => f())),
+          L.map(C.takeAll)
+        );
+      });
+
+      Images.loader = (limit) =>
+        _.tap(
+          $.findAll('img'),
+          L.map(
+            (img) => (_) =>
+              new Promise((res) => {
+                img.onload = () => res(img);
+                img.src = img.getAttribute('lazy-src');
+              })
+          ),
+          C.takeAllWithLimit(limit),
+          _.each(_.each((img) => img.classList.add('fade-in')))
+        );
+
+      /* _.go(
+        Images.fetch(),
+        Images.tmpl,
+        $.el,
+        $.append($.qs('body')),
+        Images.loader(4),
+        $.findAll('.remove'),
+        $.on('click', async ({ currentTarget: ct }) => {
+          (await Ui.confirm('정말 삭제하시겠습니까?')) &&
+            _.go(
+              ct,
+              $.closest('.images'),
+              $.remove
+              //console.log
+            );
+        })
+      ); */
+      //9. 상위 스코프 변수를 사용하는 함수와 아닌 함수들 쪼개기(C.takeAllwithLimit 리팩토링)
+      _.groupBySize = _.curry((size, iter) => {
+        let r = L.range(Infinity);
+        return _.groupBy((_) => Math.floor(r.next().value / size), iter);
+      });
+
+      C.takeAllWithLimit = _.curry((limit = Infinity, iter) => {
+        return _.go(
+          iter,
+          _.groupBySize(limit),
+          L.values,
+          L.map(L.map((f) => f())),
+          L.map(C.takeAll)
+        );
+      });
+
+      /* _.go(
+        Images.fetch(),
+        Images.tmpl,
+        $.el,
+        $.append($.qs('body')),
+        Images.loader(4),
+        $.findAll('.remove'),
+        $.on('click', async ({ currentTarget: ct }) => {
+          (await Ui.confirm('정말 삭제하시겠습니까?')) &&
+            _.go(
+              ct,
+              $.closest('.images'),
+              $.remove
+              //console.log
+            );
+        })
+      ); */
+      //10. DOM을 다루는 고차 함수
+      Ui.remover = (btnsel, targetsel, before = (a) => a, after = (a) => a) =>
+        _.tap(
+          $.findAll(btnsel),
+          $.on('click', async ({ currentTarget: ct }) => {
+            (await Ui.confirm('정말 삭제하시겠습니까?')) &&
+              _.go(
+                ct,
+                $.closest(targetsel),
+                _.tap(befere),
+                $.remove,
+                _.tap(after)
+              );
+          })
+        );
+
+      _.go(
+        Images.fetch(),
+        Images.tmpl,
+        $.el,
+        $.append($.qs('body')),
+        Ui.remover('.remove', '.image', undefined, console.log),
+        Images.loader(4)
+      );
     </script>
   </body>
 </html>
