@@ -53,7 +53,8 @@
         $.remove = el => el.parentNode.removeChild(el)
         $.on = (event, f) => els =>
             _.each(el => el.addEventListener(event, f), _.isIterable(els) ? els : [els])
-
+        
+        $.addClass = _.curry((name, el) => el.classList.add(name))
 
         $.qs = (sel, parent = document) => parent.querySelector(sel)
         $.qsa = (sel, parent = document) => parent.querySelectorAll(sel)
@@ -66,18 +67,41 @@
             <div class="images">
                 ${strMap(img => `
                     <div class="image">
-                        <div class="box"><img src="${img.url}" alt=""></div>
+                        <div class="box"><img src="" lazy-src="${img.url}" class="fade" alt=""></div>
                         <div class="name">${img.name}</div>
                         <div class="remove">X</div>
                     </div>
                 `, imgs)}
             </div>
         `
+        Images.loader = limit => _.tap(
+            $.findAll("img"),
+                L.map(img => _ => new Promise(resolve => {
+                    img.onload = () => resolve(img);
+                    img.src = img.getAttribute("lazy-src")
+                })),
+                lazy => {
+                    let r = L.range(Infinity)
+                    return _.go(
+                        lazy,
+                        _.groupBy(_ => Math.floor(r.next().value / limit)),
+                        L.values,
+                        L.map(L.map(f => f())),
+                        L.map(C.takeAll),
+                        _.each(_.each($.addClass('fade-in')))
+                    )
+                }
+        )
         _.go(
             Images.fetch(),
             Images.tmpl,
             $.el,
             $.append($.qs('body')),
+                
+            // 모두 한꺼 번에 불러오기
+            // C.takeAll,
+            // _.each($.addClass('fade-in'))
+            Images.loader(4),
             $.findAll('.image'),
             $.on('click', async ({currentTarget:ct}) => 
                 await Ui.confirm('정말 삭제 하시겠습니까?') && 
@@ -151,7 +175,7 @@
             
         )
         
-        Ui.alert('삭제되었습니다')
+        // Ui.alert('삭제되었습니다')
     </script>
 </body>
 </html>
