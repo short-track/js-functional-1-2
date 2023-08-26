@@ -80,38 +80,22 @@
                     img.onload = () => resolve(img);
                     img.src = img.getAttribute("lazy-src")
                 })),
-                lazy => {
-                    let r = L.range(Infinity)
-                    return _.go(
-                        lazy,
-                        _.groupBy(_ => Math.floor(r.next().value / limit)),
-                        L.values,
-                        L.map(L.map(f => f())),
-                        L.map(C.takeAll),
-                        _.each(_.each($.addClass('fade-in')))
-                    )
-                }
+                C.takeAllWithLimit(limit),
+                _.each(_.each($.addClass('fade-in')))
         )
-        _.go(
-            Images.fetch(),
-            Images.tmpl,
-            $.el,
-            $.append($.qs('body')),
-                
-            // 모두 한꺼 번에 불러오기
-            // C.takeAll,
-            // _.each($.addClass('fade-in'))
-            Images.loader(4),
-            $.findAll('.image'),
-            $.on('click', async ({currentTarget:ct}) => 
-                await Ui.confirm('정말 삭제 하시겠습니까?') && 
-                _.go(
-                    ct,
-                    $.closest('.image'),
-                    $.remove
-                )
-            )
-        )
+        
+        _.groupBySize = _.curry((size, iter) => {
+            let r = L.range(Infinity)
+            return _.groupBy(_ => Math.floor(r.next().value / size), iter)
+        })
+
+        C.takeAllWithLimit = _.curry((limit, iter) =>  _.go(
+                iter,
+                _.groupBySize(limit),
+                L.values,
+                L.map(L.map(f => f())),
+                L.map(C.takeAll)))
+        
 
     </script>
 
@@ -174,8 +158,33 @@
             ]
             
         )
+        Ui.remover = (buttonSelector, targetSelector, before = a => a, after = a => a) => _.tap(
+            $.findAll(buttonSelector),
+            $.on('click', async ({currentTarget:ct}) => 
+                await Ui.confirm('정말 삭제 하시겠습니까?') && 
+                _.go(
+                    ct,
+                    $.closest(targetSelector),
+                    _.tap(before),
+                    $.remove,
+                    _.tap(after)
+                )
+            )
+        )
         
         // Ui.alert('삭제되었습니다')
+        _.go(
+            Images.fetch(),
+            Images.tmpl,
+            $.el,
+            $.append($.qs('body')),
+                
+            // 모두 한꺼 번에 불러오기
+            // C.takeAll,
+            // _.each($.addClass('fade-in'))
+            Ui.remover(".remove", ".image", _ => console.log("서버 통신!")),
+            Images.loader(4)
+        )
     </script>
 </body>
 </html>
