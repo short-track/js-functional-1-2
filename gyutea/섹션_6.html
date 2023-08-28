@@ -1,0 +1,255 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>07/1</title>
+  <script src="../fx.js"></script>
+  <style>
+    .fade {
+      opacity: 0;
+    }
+    .fade-in {
+      opacity: 1;
+      transition: opacity 0.3s;
+    }
+    .confirm {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.2);
+      z-index: 2;
+    }
+    .confirm .body {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      margin: auto;
+      width: 300px;
+      height: 160px;
+      background: #fff;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .confirm .msg {
+      padding: 0 24px;
+      margin-top: 56px;
+      margin-bottom: 16px;
+    }
+    .confirm button {
+      padding: 8px;
+      width: 60px;
+      border: 0;
+      background: #eee;
+      border-radius: 8px;
+      margin: 3px;
+    }
+    .confirm button.ok {
+      border: 0;
+      color: #fff;
+      background: #000;
+    }
+    .images {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      padding: 16px;
+      overflow: auto;
+      text-align: center;
+    }
+    .image {
+      position: relative;
+      display: inline-block;
+      width: 160px;
+      margin: 4px;
+    }
+    .image .remove {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 24px;
+      height: 24px;
+      padding: 3px 0 0;
+      box-sizing: border-box;
+      text-align: center;
+      background: #000;
+      color: #fff;
+      font-weight: bold;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .image .box {
+      position: relative;
+      width: 160px;
+      height: 160px;
+      border: 1px solid #ccc;
+      margin-bottom: 8px;
+    }
+    .image img {
+      position: absolute;
+      top: 0px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-width: 90px;
+      max-height: 90px;
+      margin: auto;
+    }
+    .image .name {
+      text-align: center;
+      height: 20px;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+
+<div style="display: none;">
+
+<script>
+    // 임시적으로 단순 타이핑, 추후 설명 추가 예정
+    const $={}
+
+    $.qs = (sel, parent= document) => parent.querySelect(sel)
+    $.qsa = (sel, parent=document) => parent.querySelectorAll(sel)
+
+    $.find = _.curry($.qs)
+    $.findAll = _.curry($.qsa)
+
+    $.el = html => {
+        const wrap = document.createElement('div')
+        wrap.innerHTML = html
+        return wrap.children[0]
+    }
+
+    $.append= _.curry((parent, child) => parent.appendChild(child))
+
+    $.closest = _.curry((sel, el)=> el.closest(sel));
+
+    $.remove = el => el.parentNode.removeChild(el);
+
+    $.on = (event, f) => els => 
+        _.each(el => el.addEventListener(event, f), _.isIterable(els)? els: [els]);
+
+    $.addClass = _.curry((name, el)=> el.classList.add(name));
+</script>
+
+<script>
+    const Ui ={};
+
+    Ui.message = _.curry((btn, msg)=> new Promise(resolve => _.go(
+        `
+            <div class="confirm">
+                <div class="body">
+                    <div class="msg"> ${msg} </div>
+                    <div class="buttons">
+                        ${_.strMap(btn=> `
+                            <button type="button" class="${btn.type}">
+                                ${btn.name}
+                            </button>
+                        `)}
+                    </div>
+                </div>
+            </div>
+        `
+    ),
+    $.el,
+    $.append($.sq('body')),
+    ..._.map(btn=> _.tap(
+            $.find(`.${btn.type}`),
+            $.on('click', e => _.go(
+                e.currentTarget,
+                $.closest('.confirm'),
+                $.remove,
+                _=> resolve(btn.value)
+            )),btns)
+    )))
+
+    Ui.confirm = Ui.message([
+            {name:'취소', type:'cancel', value: false},
+            {name: '확인', type: 'ok', value: true}
+    ])
+
+    Ui.alert = Ui.message([
+        {name: '확인', type:'ok', value: true}
+    ])
+
+    Ui.remover = (btnSel, targetSel, before = a => a, after = a => a)=> _.tap(
+            $.findAll(btnSel),
+            $.on('click',async ({currentTarget: ct})=> {
+                await Ui.confirm('정말 삭제하시겠습니까?') &&
+                _.go(
+                    ct,
+                    $.closest(targetSel),
+                    _.tap(before),
+                    $.remove,
+                    _.tap(after)
+                )
+            })
+    )
+</script>
+
+<script>
+    const Images = () => new Promise(resolve => setTimeout(()=> resolve([
+        { name: "HEART", url: "https://s3.marpple.co/files/m2/t3/colored_images/45_1115570_1162087.png" },
+        { name: "하트", url: "https://s3.marpple.co/f1/2019/1/1235206_1548918825999_78819.png" },
+    ])))
+
+    const string = iter => _.reducer((a, b)=> `${a}${b}`, iter);
+
+    _.strMap = _.curry(_.pipe(L.map, string));
+
+    Images.tmpl = imgs => `
+        <div class="images">
+            ${_.strMap(img =>`
+                <div class="image">
+                    <div class="box"><img src="" lazy-src="${img.url}" class="fade" alt=""></div>
+                    <div class="name">${img.name}</div>
+                    <div class="remove">x</div>
+                </div>
+            `)}
+        </div>
+    `;
+
+    Images.loader = limit => _.tap(
+        $.findAll('img'),
+        L.map(img => _ => new Promise(resolve=> {
+            img.onload = () => resolve(img);
+            img.src = img.getAttribute('lazy-src')
+        })),
+        C.takeAllWithLimit(limit),
+        _.each(_.each($.addClass('fade-in')))
+    )
+
+    _.groupBySize = _.curry((size, iter)=> {
+        let r = L.range(Infinity);
+        return _.groupBy(_ => Math.floor(r.next().value/size), iter);
+
+    })
+
+    C.takeAllWithLimit = _.curry((limit = Infinity, iter)=> _.go(
+        iter,
+        _.groupBySize(limit),
+        L.values,
+        L.map(L.map(f=>f())),
+        L.map(c.takeAll)
+    ))
+
+    _.go(
+        Images.fetch(),
+        Images.tmpl,
+        $.el,
+        $.append($.qs('body')),
+        Ui.remove('.remove', '.image', _=> console.log('서버 통신')),
+        Images.loader(4)
+    )
+
+</script>
